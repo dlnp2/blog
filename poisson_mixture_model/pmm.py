@@ -2,6 +2,7 @@ import numpy as np
 from scipy import stats
 from scipy.special import digamma as psi
 from scipy.misc import logsumexp
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style('whitegrid')
