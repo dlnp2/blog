@@ -77,10 +77,10 @@ class PMM(object):
         plt.show()
 
     def fit(self, X, init_pi, init_r, init_s, init_alpha, n_iter):
-        self.pi_inf = [np.array(init_pi)]
-        self.r_inf = [np.array(init_r)]
-        self.s_inf = [np.array(init_s)]
-        self.alpha_inf = [np.array(init_alpha)]
+        self.pi_inf = np.array([np.array(init_pi)])
+        self.r_inf = np.array([np.array(init_r)])
+        self.s_inf = np.array([np.array(init_s)])
+        self.alpha_inf = np.array([np.array(init_alpha)])
         for _ in range(n_iter):
             r_old, s_old, alpha_old = self.r_inf[-1], self.s_inf[-1], self.alpha_inf[-1]
             ln_pi_new = [np.dot(X, (psi(s_old[k]) - np.log(r_old[k]))) -
@@ -91,10 +91,10 @@ class PMM(object):
             n_new = pi_new.sum(axis=0)
             r_new = n_new + init_r
             alpha_new = n_new + init_alpha
-            self.pi_inf.append(pi_new)
-            self.r_inf.append(r_new)
-            self.s_inf.append(s_new)
-            self.alpha_inf.append(alpha_new)
+            self.pi_inf = np.append(self.pi_inf, [pi_new], axis=0)
+            self.r_inf = np.append(self.r_inf, [r_new], axis=0)
+            self.s_inf = np.append(self.s_inf, [s_new], axis=0)
+            self.alpha_inf = np.append(self.alpha_inf, [alpha_new], axis=0)
 
     def predict(self, trial, init_pi, init_r, init_s, init_alpha, n_iter):
         X_original = self.pick_sample(trial)
