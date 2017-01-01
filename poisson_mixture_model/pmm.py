@@ -79,7 +79,7 @@ class PMM(object):
         g.map(plt.scatter, 'x1', 'x2').add_legend()
         plt.show()
 
-    def infer_parameters(self, X, init_pi, init_r, init_s, init_alpha, n_iter):
+    def fit(self, X, init_pi, init_r, init_s, init_alpha, n_iter):
         self.pi_inf = [np.array(init_pi)]
         self.r_inf = [np.array(init_r)]
         self.s_inf = [np.array(init_s)]
@@ -99,12 +99,11 @@ class PMM(object):
             self.s_inf.append(s_new)
             self.alpha_inf.append(alpha_new)
 
-    def infer_z(self, trial, init_pi, init_r, init_s, init_alpha, n_iter):
+    def predict(self, trial, init_pi, init_r, init_s, init_alpha, n_iter):
         X_original = self.pick_sample(trial)
         X_inferred = X_original.copy()
         X_original['trial'] = 'original'
         X_inferred['trial'] = 'inferred'
-        self.infer_parameters(X_inferred[['x1', 'x2']].values,
-                              init_pi, init_r, init_s, init_alpha, n_iter)
+        self.fit(X_inferred[['x1', 'x2']].values, init_pi, init_r, init_s, init_alpha, n_iter)
         X_inferred['z'] = np.argmax(self.pi_inf[-1], axis=1)
         self.show_samples(data=pd.concat([X_original, X_inferred]))
