@@ -2,11 +2,10 @@ import numpy as np
 from scipy import stats
 from scipy.special import digamma as psi
 from scipy.misc import logsumexp
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style('whitegrid')
-%matplotlib inline
+# %matplotlib inline
 
 
 class PMM(object):
@@ -15,7 +14,7 @@ class PMM(object):
         self.K = k  # number of classes
         self.D = d  # dimension of data
         self.N = n  # number of samples
-        self.ALPHA = alpha  # parameter of prior Dirichlet dist.
+        self.ALPHA = np.array(alpha)  # parameter of prior Dirichlet dist.
         self.S = s  # shape parameter of  prior Gamma dist.
         self.R = r  # rate parameter of prior Gamma dist.
         self.data_stack = pd.DataFrame()  # dataframe storing generated samples
@@ -33,7 +32,6 @@ class PMM(object):
             self.lamb = np.vstack((self.lamb, lam))
         result = []
         for _ in range(self.N):
-            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_discrete.html
             z = stats.rv_discrete(values=(list(range(len(pi))), pi)).rvs()
             x1 = stats.poisson.rvs(lam[int(z)][0])
             x2 = stats.poisson.rvs(lam[int(z)][1])
@@ -66,12 +64,12 @@ class PMM(object):
         print('pi:', self.pi[trial])
 
     def show_samples(self, data=None):
+        # http://seaborn.pydata.org/generated/seaborn.FacetGrid.html
         if data is None:
             data = self.data_stack
             col_wrap = 5
         else:
             col_wrap = None
-        # http://seaborn.pydata.org/generated/seaborn.FacetGrid.html
         g = sns.FacetGrid(data, col='trial', hue='z', col_wrap=col_wrap)
         g.map(plt.scatter, 'x1', 'x2').add_legend()
         plt.show()
@@ -104,3 +102,37 @@ class PMM(object):
         self.fit(X_inferred[['x1', 'x2']].values, init_pi, init_r, init_s, init_alpha, n_iter)
         X_inferred['z'] = np.argmax(self.pi_inf[-1], axis=1)
         self.show_samples(data=pd.concat([X_original, X_inferred]))
+
+    def kl_divergence(self, init_pi=None, init_r=None, init_s=None,  init_alpha=None,
+                      n_iter=None, n_trials=None):
+        if ((init_pi is None) or (init_r is None) or (init_s is None) or (init_alpha is None) or
+            (n_iter is None) or (n_trials is None)):
+            init_pi = self.pi_inf[0]
+            init_r = self.r_inf[0]
+            init_s = self.s_inf[0]
+            init_alpha = self.alpha_inf[0]
+            n_inference_iter = self.pi_inf.shape[0]
+            n_trials = int(self.data_stack.shape[0] / float(self.N))
+        kl = []
+        for trial in range(n_trials):
+            X = self.pick_sample(trial)
+            self.fit(X[['x1', 'x2']].values, init_pi, init_r, init_s, init_alpha, n_inference_iter)
+            kl.append([self._kl(X[['x1', 'x2']].values, i) for i in range(n_inference_iter)])
+        kl = pd.DataFrame(np.array(kl).T, columns=list(map(str, range(n_trials))))
+        return kl
+
+    def _kl(self, X, i):
+        pi = self.pi_inf[i]
+        s = self.s_inf[i]
+        r = self.r_inf[i]
+        alpha = self.alpha_inf[i]
+        s_ord = self.S
+        r_ord = self.R
+        alpha_ord = self.ALPHA
+        tmp_x = np.dot(X, psi(s).T - np.log(r) - s.sum(axis=1) / r)
+        kl1 = -np.dot(pi, tmp_x.T).sum()
+        kl2 = -np.dot(pi, psi(alpha) - psi(alpha.sum())).sum()
+        kl3 = (s_ord - 1) * (psi(s).T - np.log(r)).sum(axis=0) - r_ord * s.sum(axis=1) / r
+        kl3 = -np.sum(kl3)
+        kl4 = -np.dot(alpha_ord - 1, psi(alpha) - psi(alpha.sum()))
+        return kl1 + kl2 + kl3 + kl4
