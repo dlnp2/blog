@@ -22,10 +22,6 @@ class PMM(object):
         self.lamb = np.array([])  # lambda parameter used to generate samples
         self.pi = np.array([])  # pi parameter used to generate samples
 
-    def _categorical(self, xk, pk):
-        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_discrete.html
-        return stats.rv_discrete(name='categorical', values=(xk, pk))
-
     def _sampling(self):
         pi = stats.dirichlet.rvs(self.ALPHA)[0]
         lam = stats.gamma.rvs(self.S, scale=1./self.R, size=self.K*self.D).reshape((self.K, self.D))
@@ -37,7 +33,8 @@ class PMM(object):
             self.lamb = np.vstack((self.lamb, lam))
         result = []
         for _ in range(self.N):
-            z = self._categorical(list(range(len(pi))), pi).rvs()
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_discrete.html
+            z = stats.rv_discrete(values=(list(range(len(pi))), pi)).rvs()
             x1 = stats.poisson.rvs(lam[int(z)][0])
             x2 = stats.poisson.rvs(lam[int(z)][1])
             result.append([x1, x2, z])
@@ -69,12 +66,12 @@ class PMM(object):
         print('pi:', self.pi[trial])
 
     def show_samples(self, data=None):
-        # http://seaborn.pydata.org/generated/seaborn.FacetGrid.html
         if data is None:
             data = self.data_stack
             col_wrap = 5
         else:
             col_wrap = None
+        # http://seaborn.pydata.org/generated/seaborn.FacetGrid.html
         g = sns.FacetGrid(data, col='trial', hue='z', col_wrap=col_wrap)
         g.map(plt.scatter, 'x1', 'x2').add_legend()
         plt.show()
