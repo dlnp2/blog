@@ -1,12 +1,13 @@
 import numpy as np
+from numpy import log, dot
 from scipy import stats
-from scipy.special import digamma as psi
+from scipy.special import digamma as psi, gammaln
 from scipy.misc import logsumexp
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_style('whitegrid')
-# %matplotlib inline
+%matplotlib inline
 
 
 class PMM(object):
@@ -82,11 +83,10 @@ class PMM(object):
         self.alpha_inf = np.array([np.array(init_alpha)])
         for _ in range(n_iter):
             r_old, s_old, alpha_old = self.r_inf[-1], self.s_inf[-1], self.alpha_inf[-1]
-            ln_pi_new = [np.dot(X, (psi(s_old[k]) - np.log(r_old[k]))) -
-                         (s_old[k] / r_old[k]).sum() + psi(alpha_old[k]) - psi(alpha_old.sum())
-                         for k in range(self.K)]
+            ln_pi_new = [dot(X, (psi(s_old[k]) - np.log(r_old[k]))) - (s_old[k] / r_old[k]).sum() +
+                         psi(alpha_old[k]) - psi(alpha_old.sum()) for k in range(self.K)]
             pi_new = np.exp(np.vstack(ln_pi_new) - logsumexp(ln_pi_new, axis=0)).T
-            s_new = np.dot(pi_new.T, X) + init_s
+            s_new = dot(pi_new.T, X) + init_s
             n_new = pi_new.sum(axis=0)
             r_new = n_new + init_r
             alpha_new = n_new + init_alpha
@@ -106,21 +106,20 @@ class PMM(object):
 
     def kl_divergence(self, init_pi=None, init_r=None, init_s=None,  init_alpha=None,
                       n_iter=None, n_trials=None):
-        if ((init_pi is None) or (init_r is None) or (init_s is None) or (init_alpha is None) or
+        if ((init_pi is None) or (init_r is None) or (init_s is None) or(init_alpha is None) or
             (n_iter is None) or (n_trials is None)):
             init_pi = self.pi_inf[0]
             init_r = self.r_inf[0]
             init_s = self.s_inf[0]
             init_alpha = self.alpha_inf[0]
-            n_inference_iter = self.pi_inf.shape[0]
+            n_inference_iter = self.pi_inf.shape[0] - 1
             n_trials = int(self.data_stack.shape[0] / float(self.N))
         kl = []
         for trial in range(n_trials):
             X = self.pick_sample(trial)
             self.fit(X[['x1', 'x2']].values, init_pi, init_r, init_s, init_alpha, n_inference_iter)
             kl.append([self._kl(X[['x1', 'x2']].values, i) for i in range(n_inference_iter)])
-        kl = pd.DataFrame(np.array(kl).T, columns=list(map(str, range(n_trials))))
-        return kl
+        return pd.DataFrame(np.array(kl).T, columns=list(map(str, range(n_trials))))
 
     def _kl(self, X, i):
         pi = self.pi_inf[i]
@@ -130,10 +129,14 @@ class PMM(object):
         s_ord = self.S
         r_ord = self.R
         alpha_ord = self.ALPHA
-        tmp_x = np.dot(X, psi(s).T - np.log(r) - s.sum(axis=1) / r)
-        kl1 = -np.dot(pi, tmp_x.T).sum()
-        kl2 = -np.dot(pi, psi(alpha) - psi(alpha.sum())).sum()
-        kl3 = (s_ord - 1) * (psi(s).T - np.log(r)).sum(axis=0) - r_ord * s.sum(axis=1) / r
-        kl3 = -np.sum(kl3)
-        kl4 = -np.dot(alpha_ord - 1, psi(alpha) - psi(alpha.sum()))
+
+        tmp_x = dot(X, psi(s).T - log(r)) - s.sum(axis=1) / r
+        kl1 = -dot(pi, tmp_x.T).sum() + dot(pi.T, gammaln(X).sum(axis=1)).sum()
+        kl2 = dot(pi, log(pi).T).sum() - dot(pi, psi(alpha) - psi(alpha.sum())).sum()
+        kl3 = np.sum(s_ord * (log(r) - log(r_ord)) + np.sum((s - s_ord) * psi(s), axis=1) -
+                     (1 - r_ord / r) * s.sum(axis=1) + gammaln(s_ord) - gammaln(s).sum(axis=1))
+        kl4 = gammaln(alpha.sum()) - gammaln(alpha).sum()  # replace log(factorial()) by gammaln
+        kl4 += -gammaln(alpha_ord.sum()) + gammaln(alpha_ord).sum()
+        kl4 += dot(alpha - alpha_ord, psi(alpha) - psi(alpha.sum()))
+
         return kl1 + kl2 + kl3 + kl4
