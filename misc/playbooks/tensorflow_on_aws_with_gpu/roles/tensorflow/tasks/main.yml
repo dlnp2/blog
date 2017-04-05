@@ -1,0 +1,5 @@
+---
+# https://www.tensorflow.org/install/install_linux#InstallingDocker
+
+- name: "get tensorflow docker image"
+  shell: nvidia-docker pull gcr.io/tensorflow/tensorflow:latest-gpu

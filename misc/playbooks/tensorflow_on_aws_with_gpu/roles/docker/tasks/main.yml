@@ -1,0 +1,36 @@
+---
+# install docker community edition. See:
+# https://docs.docker.com/engine/installation/linux/ubuntu/#install-using-the-repository
+
+- name: "install necessary packages"
+  apt: name={{ item }}
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - software-properties-common
+
+- name: "add GPG key"
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+
+- name: "add repository"
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+
+- name: "install docker"
+  apt:
+    name: docker-ce
+    update_cache: yes
+
+# install nvidia-docker. See:
+# https://github.com/NVIDIA/nvidia-docker
+
+- name: "get nvidia-docker deb"
+  get_url:
+    url: https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
+    dest: /home/ubuntu/setup
+
+- name: "install nvidia-docker"
+  apt:
+    deb: /home/ubuntu/setup/nvidia-docker_1.0.1-1_amd64.deb

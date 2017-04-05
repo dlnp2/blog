@@ -1,0 +1,7 @@
+---
+- hosts: aws
+  become: yes
+  roles:
+    - cuda
+    - docker
+    - tensorflow
