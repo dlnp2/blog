@@ -1,7 +1,7 @@
 ---
 - name: "make setup directory"
   file:
-    path: /home/ubuntu/setup
+    path: "{{ setup_dir }}"
     state: directory
 
 # install CUDA on Ubuntu 16.04. See:
@@ -9,12 +9,12 @@
 
 - name: "get cuda toolkit package"
   get_url:
-    url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-    dest: /home/ubuntu/setup
+    url: "{{ cuda.prefix }}/{{ cuda.pkg_name }}"
+    dest: "{{ setup_dir }}"
 
 - name: "unpack cuda toolkit package"
   apt:
-    deb: /home/ubuntu/setup/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+    deb: "{{ setup_dir }}/{{ cuda.pkg_name }}"
 
 - name: "install cuda"
   apt:

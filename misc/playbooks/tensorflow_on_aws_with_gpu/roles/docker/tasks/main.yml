@@ -14,9 +14,13 @@
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
 
+- name: "get version name"
+  shell: lsb_release -cs
+  register: lsb_release
+
 - name: "add repository"
   apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ lsb_release.stdout }} stable"
 
 - name: "install docker"
   apt:
@@ -28,9 +32,9 @@
 
 - name: "get nvidia-docker deb"
   get_url:
-    url: https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
-    dest: /home/ubuntu/setup
+    url: "{{ nvidia_docker.prefix }}/{{ nvidia_docker.pkg_name }}"
+    dest: "{{ setup_dir }}"
 
 - name: "install nvidia-docker"
   apt:
-    deb: /home/ubuntu/setup/nvidia-docker_1.0.1-1_amd64.deb
+    deb: "{{ setup_dir }}/{{ nvidia_docker.pkg_name }}"

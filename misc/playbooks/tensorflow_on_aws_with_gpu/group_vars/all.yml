@@ -1,0 +1,8 @@
+---
+setup_dir: /home/ubuntu/setup
+cuda:
+  prefix: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64
+  pkg_name: cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+nvidia_docker:
+  prefix: https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1
+  pkg_name: nvidia-docker_1.0.1-1_amd64.deb
