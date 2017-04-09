@@ -27,9 +27,7 @@
     name: docker-ce
     update_cache: yes
 
-# install nvidia-docker. See:
-# https://github.com/NVIDIA/nvidia-docker
-
+# install nvidia-docker
 - name: "get nvidia-docker deb"
   get_url:
     url: "{{ nvidia_docker.prefix }}/{{ nvidia_docker.pkg_name }}"

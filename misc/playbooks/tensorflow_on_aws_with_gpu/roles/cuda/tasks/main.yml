@@ -4,9 +4,7 @@
     path: "{{ setup_dir }}"
     state: directory
 
-# install CUDA on Ubuntu 16.04. See:
-# https://developer.nvidia.com/cuda-downloads
-
+# install CUDA on Ubuntu 16.04.
 - name: "get cuda toolkit package"
   get_url:
     url: "{{ cuda.prefix }}/{{ cuda.pkg_name }}"
