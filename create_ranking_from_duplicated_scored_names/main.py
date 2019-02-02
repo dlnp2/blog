@@ -14,6 +14,7 @@ def take_top_n(names, scores, n=3):
         Input flat list. This also must be sorted as `names`.
     n : int
         Specifies how much entries to be taken.
+
     Returns
     -------
     top_names : list
