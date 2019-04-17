@@ -32,14 +32,15 @@ class Spider:
 
     def run(self) -> None:
         for entrypoint in ENTRYPOINTS:
-            self._find_results(entrypoint)
-        self._save()
+            self._get_search_results(entrypoint)
+        self._save_abstracts()
+        self._save_pdfs()
 
     def _get(self, url: str) -> None:
         print("Accessing", url)
         self._driver.get(url)
 
-    def _find_results(self, entrypoint: str):
+    def _get_search_results(self, entrypoint: str):
         self._get(entrypoint)
 
         all_abst = self._driver.find_elements_by_css_selector("span.abstract-short")
@@ -60,9 +61,24 @@ class Spider:
                     result.append(p.find_elements_by_tag_name("span")[2].text)
             self._results.append(result)
 
-    def _save(self):
+    def _save_abstracts(self):
         data = pd.DataFrame(self._results)
         data.to_csv(self._output_dir / "cvpr2019_papers.csv", index=False)
+
+    def _save_pdfs(self):
+        downloaded_files = [p.name for p in self._papers_dir.iterdir()]
+        for url in [result[0] for result in self._results]:
+            if url.split("/")[-1] + ".pdf" not in downloaded_files:
+                self._get(url)
+                pdf = self._driver.find_element_by_css_selector(
+                    "div.full-text > ul > li > a").get_attribute("href")
+                self._get(pdf)
+                time.sleep(1)
+            else:
+                print("Skip {} (already downloaded)".format(url))
+        print("Waiting for download completion...", end="")
+        time.sleep(60)  # wait for the last paper to be downloaded
+        print("done.")
 
     def close(self) -> None:
         self._driver.quit()
