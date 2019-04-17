@@ -12,12 +12,13 @@ ENTRYPOINTS = [
 
 
 class Spider:
-    def __init__(self, output_dir: Path) -> None:
+    def __init__(self, output_dir: Path, download_pdf: bool) -> None:
         self._output_dir = output_dir
         self._papers_dir = output_dir / "papers"
         self._papers_dir.mkdir(parents=True, exist_ok=True)
         self._results = []
         self._driver = self._create_driver()
+        self.download_pdf = download_pdf
 
     def _create_driver(self) -> Any:
         options = webdriver.ChromeOptions()
@@ -34,7 +35,8 @@ class Spider:
         for entrypoint in ENTRYPOINTS:
             self._get_search_results(entrypoint)
         self._save_abstracts()
-        self._save_pdfs()
+        if self.download_pdf:
+            self._save_pdfs()
 
     def _get(self, url: str) -> None:
         print("Accessing", url)
@@ -63,7 +65,9 @@ class Spider:
 
     def _save_abstracts(self):
         data = pd.DataFrame(self._results)
-        data.to_csv(self._output_dir / "cvpr2019_papers.csv", index=False)
+        outpath = self._output_dir / "cvpr2019_papers.csv"
+        data.to_csv(outpath, index=False)
+        print("Abstracts dumped to {}".format(str(outpath)))
 
     def _save_pdfs(self):
         downloaded_files = [p.name for p in self._papers_dir.iterdir()]
@@ -87,8 +91,9 @@ class Spider:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=str, default="./data")
+    parser.add_argument("--download_pdf", action="store")
     args = parser.parse_args()
 
-    spider = Spider(Path(args.output_dir))
+    spider = Spider(Path(args.output_dir), args.download_pdf)
     spider.run()
     spider.close()
