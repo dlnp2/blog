@@ -1,12 +1,7 @@
 using BenchmarkTools, Distributions
 
 function gen_logistic_variables(n_samples)
-    x = zeros(n_samples)
-    for i in 1:n_samples
-        u = rand()
-        x[i] = -log(1/u - 1)
-    end
-    x
+    x = -log.(1 ./ rand(n_samples) .- 1)
 end
 
 n_samples = 1000
