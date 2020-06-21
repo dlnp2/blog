@@ -1,11 +1,5 @@
 using Distributions, Plots
 
-function gen_likelihood_fn(θ)
-    p(x) = pdf(Cauchy(θ), x)
-    likelihood(arr) = prod(p.(arr))
-    return likelihood
-end
-
 function likelihood(x::Array{Float64, 1}, θ::Float64)
     p(y) = pdf(Cauchy(θ), y)
     prod(p.(x))
