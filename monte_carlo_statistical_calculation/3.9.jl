@@ -8,7 +8,7 @@ end
 
 function approx_normal(M::Int)
     x = rand(Normal(), M)
-    f(y) = exp(-√abs(y)) * (sin(y)) ^ 2 * sqrt(2π) * exp(y ^ 2 / 2)
+    f(y) = sqrt(2π) * exp(y ^ 2 / 2 - √abs(y)) * (sin(y)) ^ 2
     mean(f.(x))
 end
 
